@@ -65,7 +65,7 @@ export default function Home() {
           <a className="hover:text-[#714c5c]" href="#ubicacion">Encontranos</a>
         </nav>
         <a className="flex items-center gap-2.5 text-[10px] text-[#746e65] transition-colors hover:text-[#714c5c] sm:text-[11px]" href="tel:+541145678920">
-          <span className="size-[7px] rounded-full bg-[#9aab8c] shadow-[0_0_0_4px_#9aab8c20]" />
+          <span className="size-1.75 rounded-full bg-[#9aab8c] shadow-[0_0_0_4px_#9aab8c20]" />
           <span className="hidden sm:inline">¿Tenés dudas? </span><strong className="font-semibold text-[#29251f]">Contactanos</strong>
         </a>
       </header>
