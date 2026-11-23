@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Alma Estética | Reservá tu momento",
-  description: "Elegí tu tratamiento y reservá online en Alma Estética, Palermo.",
+  title: "Nuvora | Gestión para negocios de belleza",
+  description: "Nuvora ayuda a los negocios de belleza y cuidado personal a gestionar su actividad.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

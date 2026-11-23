@@ -1,147 +1,329 @@
-"use client";
-
-import { FormEvent, useState } from "react";
-
-const services = [
-  { id: "facial", name: "Limpieza facial profunda", duration: "60 min", price: "$ 18.000", symbol: "✳" },
-  { id: "cejas", name: "Perfilado + laminado de cejas", duration: "45 min", price: "$ 14.000", symbol: "〰" },
-  { id: "manos", name: "Manicura semipermanente", duration: "75 min", price: "$ 16.500", symbol: "✧" },
+const appointments = [
+  { time: "09:30", name: "Sofía Martínez", service: "Coloración", color: "bg-[#dce5f5]" },
+  { time: "10:45", name: "Lucía Fernández", service: "Corte + brushing", color: "bg-[#e9edf8]" },
+  { time: "12:00", name: "Valentina Ruiz", service: "Manicura", color: "bg-[#d9e8e5]" },
 ];
 
-function getAvailableDates() {
-  const todayParts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Argentina/Buenos_Aires",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  }).formatToParts(new Date());
-  const part = (type: string) => Number(todayParts.find((item) => item.type === type)?.value);
-  const candidate = new Date(Date.UTC(part("year"), part("month") - 1, part("day")));
-  const weekdays = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
-  const monthNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
-  const available = [];
+type Appointment = (typeof appointments)[number];
 
-  while (available.length < 5) {
-    candidate.setUTCDate(candidate.getUTCDate() + 1);
-    const weekday = candidate.getUTCDay();
-    if (weekday === 0 || weekday === 1) continue;
-    available.push({
-      day: weekdays[weekday],
-      date: String(candidate.getUTCDate()).padStart(2, "0"),
-      month: monthNames[candidate.getUTCMonth()],
-    });
-  }
-
-  return available;
+function AppointmentRow({ appointment }: { appointment: Appointment }) {
+  return (
+    <div className="flex items-center gap-2.5 border-t border-[#f2f2f7] py-2 sm:gap-3 sm:py-2.5">
+      <span className="w-9 text-[8px] font-medium text-[#626b7d] sm:w-10 sm:text-[9px]">{appointment.time}</span>
+      <span aria-hidden="true" className={`size-7 shrink-0 rounded-full ${appointment.color}`} />
+      <span className="min-w-0 flex-1">
+        <strong className="block truncate text-[9px] font-semibold text-[#42475e] sm:text-[10px]">{appointment.name}</strong>
+        <small className="mt-0.5 block truncate text-[8px] text-[#686e80] sm:text-[9px]">{appointment.service}</small>
+      </span>
+    </div>
+  );
 }
 
-const dates = getAvailableDates();
-const timeSlots = ["09:30", "10:30", "11:45", "14:00", "15:30", "17:00"];
-type BookingStep = "selection" | "details" | "done";
+const problemCards = [
+  {
+    icon: "calendar",
+    title: "Turnos desorganizados",
+    description: "Mantener la agenda actualizada y evitar confusiones puede llevar más tiempo del que debería.",
+  },
+  {
+    icon: "messages",
+    title: "Demasiados mensajes",
+    description: "Responder consultas y coordinar disponibilidades se lleva horas de tu día.",
+  },
+  {
+    icon: "team",
+    title: "Profesionales y horarios",
+    description: "Coordinar distintas agendas y disponibilidades no siempre es sencillo.",
+  },
+  {
+    icon: "layers",
+    title: "Información dispersa",
+    description: "Los datos de clientes, servicios y turnos terminan repartidos en distintos lugares.",
+  },
+] as const;
 
-export default function Home() {
-  const [selectedServiceId, setSelectedServiceId] = useState(services[0].id);
-  const [selectedDate, setSelectedDate] = useState(0);
-  const [selectedTime, setSelectedTime] = useState("10:30");
-  const [step, setStep] = useState<BookingStep>("selection");
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const selectedService = services.find((service) => service.id === selectedServiceId)!;
+type IconName = (typeof problemCards)[number]["icon"] | "services" | "client";
 
-  function submitBooking(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStep("done");
+function LineIcon({ name }: { name: IconName }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+      {name === "calendar" && <><rect x="3.5" y="5" width="17" height="15.5" rx="2.2" /><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h.01M12 13h.01M16 13h.01M8 16.5h.01M12 16.5h.01" /></>}
+      {name === "messages" && <><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.4-.75L4 20l1.7-4.1A7.4 7.4 0 0 1 5 12.5 7.5 7.5 0 0 1 12.5 5H13a7 7 0 0 1 7 6.5Z" /><path d="M9 12.5h.01M12.5 12.5h.01M16 12.5h.01" /></>}
+      {name === "team" && <><circle cx="9" cy="8" r="3" /><path d="M3.5 19v-1.2A4.8 4.8 0 0 1 8.3 13h1.4a4.8 4.8 0 0 1 4.8 4.8V19M16 5.3a3 3 0 0 1 0 5.8M16 13h.7a3.8 3.8 0 0 1 3.8 3.8V19" /></>}
+      {name === "layers" && <><path d="m12 3.5 8.5 4.4-8.5 4.4-8.5-4.4L12 3.5Z" /><path d="m4 12 8 4.2 8-4.2M4 16.3l8 4.2 8-4.2" /></>}
+      {name === "services" && <><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z" /><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" /></>}
+      {name === "client" && <><circle cx="12" cy="8" r="3.2" /><path d="M5 20a7 7 0 0 1 14 0" /></>}
+    </svg>
+  );
+}
+
+function ProblemCard({ icon, title, description }: (typeof problemCards)[number]) {
+  return (
+    <article className="rounded-2xl border border-[#e7eaf1] bg-white p-5 sm:p-6">
+      <span className="mb-5 grid size-11 place-items-center rounded-xl bg-[#e9edf8] text-[#243b65]">
+        <LineIcon name={icon} />
+      </span>
+      <h3 className="text-base font-semibold tracking-[-0.02em] text-[#243b65]">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-[#53617a]">{description}</p>
+    </article>
+  );
+}
+
+const platformFeatures = [
+  {
+    icon: "calendar",
+    title: "Agenda de turnos",
+    description: "Visualizá y organizá las reservas de tu negocio.",
+    preview: "agenda",
+  },
+  {
+    icon: "team",
+    title: "Profesionales y horarios",
+    description: "Administrá el equipo y sus disponibilidades.",
+    preview: "team",
+  },
+  {
+    icon: "services",
+    title: "Servicios y promociones",
+    description: "Configurá servicios, precios, duraciones y combos.",
+    preview: "services",
+  },
+  {
+    icon: "client",
+    title: "Gestión de clientes",
+    description: "Mantené organizada la información de tus clientes.",
+    preview: "clients",
+  },
+] as const;
+
+type Feature = (typeof platformFeatures)[number];
+
+function FeaturePreview({ kind }: { kind: Feature["preview"] }) {
+  if (kind === "agenda") {
+    return (
+      <div className="grid gap-1.5" aria-hidden="true">
+        <div className="flex items-center gap-2 text-[10px] text-[#53617a]"><span className="w-9">09:30</span><span className="h-2 flex-1 rounded-full bg-[#dce5f5]" /></div>
+        <div className="flex items-center gap-2 text-[10px] text-[#53617a]"><span className="w-9">10:45</span><span className="h-2 flex-1 rounded-full bg-[#e9edf8]" /></div>
+        <div className="flex items-center gap-2 text-[10px] text-[#53617a]"><span className="w-9">12:00</span><span className="h-2 flex-1 rounded-full bg-[#d9e8e5]" /></div>
+      </div>
+    );
+  }
+
+  if (kind === "team") {
+    return (
+      <div className="flex items-center gap-2" aria-hidden="true">
+        <span className="grid size-7 place-items-center rounded-full bg-[#e9edf8] text-[9px] font-semibold text-[#243b65]">CM</span>
+        <span className="grid size-7 place-items-center rounded-full bg-[#dce5f5] text-[9px] font-semibold text-[#243b65]">LP</span>
+        <span className="grid size-7 place-items-center rounded-full bg-[#edf2f1] text-[9px] font-semibold text-[#53617a]">+2</span>
+        <span className="ml-1 text-[10px] text-[#53617a]">4 profesionales</span>
+      </div>
+    );
+  }
+
+  if (kind === "services") {
+    return (
+      <div className="flex flex-wrap gap-2" aria-hidden="true">
+        <span className="rounded-lg bg-[#f4f6fa] px-2.5 py-1.5 text-[10px] text-[#425779]">Corte · 45 min</span>
+        <span className="rounded-lg bg-[#e9edf8] px-2.5 py-1.5 text-[10px] text-[#243b65]">Combo × 2</span>
+      </div>
+    );
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#fbf9f5] text-[#29251f]">
-      <header className="relative z-10 mx-auto flex h-[76px] w-[calc(100%_-_38px)] max-w-[1160px] items-center justify-between sm:h-[90px] sm:w-[calc(100%_-_64px)]">
-        <a className="flex items-center gap-2.5" href="#inicio" aria-label="Alma Estética, inicio">
-          <span className="grid size-[37px] place-items-center rounded-full border border-[#b7a59a] font-serif text-[26px] italic leading-none text-[#714c5c]">a</span>
-          <span className="flex flex-col font-serif text-[18px] leading-none tracking-[.04em]">alma<span className="mt-1 font-sans text-[8px] tracking-[.21em] text-[#8b8175] uppercase">estética</span></span>
+    <div className="flex items-center gap-2.5" aria-hidden="true">
+      <span className="grid size-7 place-items-center rounded-full bg-[#e9edf8] text-[9px] font-semibold text-[#243b65]">MR</span>
+      <span className="grid gap-1"><span className="h-1.5 w-20 rounded-full bg-[#cfd7e6]" /><span className="h-1 w-14 rounded-full bg-[#e3e7ee]" /></span>
+      <span className="ml-auto text-[10px] text-[#53617a]">Cliente</span>
+    </div>
+  );
+}
+
+function FeatureItem({ icon, title, description, preview }: Feature) {
+  return (
+    <article className="min-w-0 p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e9edf8] text-[#243b65]"><LineIcon name={icon} /></span>
+        <div>
+          <h3 className="text-sm font-semibold text-[#243b65] sm:text-base">{title}</h3>
+          <p className="mt-1 text-sm leading-6 text-[#53617a]">{description}</p>
+        </div>
+      </div>
+      <div className="mt-5 border-t border-[#edf0f5] pt-4">
+        <FeaturePreview kind={preview} />
+      </div>
+    </article>
+  );
+}
+
+export default function Home() {
+  return (
+    <main id="inicio" className="min-h-screen overflow-hidden bg-[#f7f8fc] text-[#171b2d]">
+
+      <header className="mx-auto grid w-[min(100%-2rem,1180px)] grid-cols-[1fr_auto] items-center gap-y-3 py-4 sm:w-[min(100%-3rem,1180px)] sm:py-5 md:grid-cols-3 md:gap-y-0 md:py-7">
+        <a href="#inicio" className="col-start-1 row-start-1 flex items-center gap-2.5" aria-label="Nuvora, inicio">
+          <span aria-hidden="true" className="grid size-9 grid-cols-2 gap-1 rounded-[13px] bg-[#243b65] p-[9px] shadow-[0_5px_14px_#243b6525]">
+            <span className="rounded-full bg-[#8da7df]" />
+            <span className="rounded-full bg-white" />
+            <span className="rounded-full bg-white" />
+            <span className="rounded-full bg-[#76d5c4]" />
+          </span>
+          <span className="text-[19px] font-semibold tracking-[-0.055em]">nuvora</span>
         </a>
-        <nav className="hidden gap-[38px] text-xs text-[#716b62] transition-colors sm:flex" aria-label="Navegación principal">
-          <a className="hover:text-[#714c5c]" href="#servicios">Servicios</a>
-          <a className="hover:text-[#714c5c]" href="#ubicacion">Encontranos</a>
+
+        <nav aria-label="Navegación principal" className="col-span-2 row-start-2 flex items-center justify-center gap-8 text-[12px] font-medium text-[#53617a] md:col-span-1 md:col-start-2 md:row-start-1 md:gap-9 md:text-[13px]">
+          <a className="inline-flex min-h-11 items-center transition-colors hover:text-[#243b65] motion-reduce:transition-none" href="#inicio">Inicio</a>
+          <a className="inline-flex min-h-11 items-center transition-colors hover:text-[#243b65] motion-reduce:transition-none" href="#plataforma">La plataforma</a>
         </nav>
-        <a className="flex items-center gap-2.5 text-[10px] text-[#746e65] transition-colors hover:text-[#714c5c] sm:text-[11px]" href="tel:+541145678920">
-          <span className="size-[7px] rounded-full bg-[#9aab8c] shadow-[0_0_0_4px_#9aab8c20]" />
-          <span className="hidden sm:inline">¿Tenés dudas? </span><strong className="font-semibold text-[#29251f]">Contactanos</strong>
+
+        <a
+          href="#plataforma"
+          className="col-start-2 row-start-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#243b65] px-4 text-[12px] font-semibold text-white shadow-[0_7px_18px_#243b6520] transition hover:-translate-y-0.5 hover:bg-[#304d7d] motion-reduce:transform-none motion-reduce:transition-none sm:px-5 sm:text-[13px] md:col-start-3"
+        >
+          <span className="hidden sm:inline">Conocé nuestra plataforma</span>
+          <span className="sm:hidden">Conocé Nuvora</span>
+          <span aria-hidden="true">↗</span>
         </a>
       </header>
 
-      <section className="relative mx-auto grid w-[calc(100%_-_38px)] max-w-[1080px] grid-cols-1 items-center gap-8 py-9 sm:w-[calc(100%_-_64px)] sm:gap-10 sm:py-12 md:min-h-[665px] md:grid-cols-[minmax(300px,1fr)_minmax(440px,520px)] md:gap-[clamp(40px,9vw,135px)] md:py-[18px] md:pb-[52px]">
-        <div className="pointer-events-none absolute -left-[320px] -top-[20px] -z-0 hidden size-[670px] rounded-full border border-[#eee8df] md:block" />
-        <div className="relative z-[1] max-w-[430px] pb-0 md:pb-5">
-          <div className="mb-4 flex items-center gap-2.5 text-[8px] font-bold tracking-[.2em] text-[#887466] sm:mb-[21px] sm:text-[9px]"><span className="h-px w-6 bg-[#aa9585]" />UN MOMENTO PARA VOS</div>
-          <h1 className="font-serif text-[clamp(52px,13vw,70px)] leading-[.98] tracking-[-.055em] text-[#34302a] sm:text-[clamp(58px,7vw,76px)]">Tu bienestar<br />empieza <em className="font-normal text-[#855a6b]">acá.</em></h1>
-          <p className="mt-[17px] mb-[14px] max-w-[345px] font-serif text-sm leading-[1.7] text-[#746d63] sm:mt-[26px] sm:mb-[22px] sm:text-base">Elegí tu tratamiento y encontrá el momento perfecto. Nosotras nos ocupamos del resto.</p>
-          <div className="flex flex-wrap items-center gap-2 text-[9px] text-[#827b71] sm:text-[10px]"><span className="text-[19px] leading-[.5] text-[#714c5c]">⌖</span><span>Palermo, Buenos Aires</span><span className="text-[#b8afa4]">·</span><span>Mar a sáb, 9 a 19 h</span></div>
-          <div className="mt-8 hidden max-w-[330px] items-center gap-3 border-t border-[#e7e0d7] pt-[17px] font-serif text-xs italic leading-[1.55] text-[#847c72] md:flex md:mt-[50px]"><span className="font-sans text-[19px] not-italic text-[#a48675]">✳</span><span>Un espacio tranquilo, atención personalizada y tiempo para vos.</span></div>
-        </div>
+      <section className="mx-auto flex w-[min(100%-2rem,1180px)] flex-col items-center gap-10 pb-16 pt-10 sm:w-[min(100%-3rem,1180px)] sm:gap-12 sm:pb-20 sm:pt-14 lg:gap-14 lg:pb-24 lg:pt-16">
+        <div className="w-full max-w-[900px] text-center">
+          <p className="mb-5 text-[11px] font-semibold tracking-[0.16em] text-[#425779] sm:mb-6 sm:text-xs">
+            GESTIÓN INTELIGENTE PARA TU NEGOCIO
+          </p>
 
-        <div className="relative z-[1] w-full rounded-[5px] border border-[#eee9e1] bg-white px-[18px] py-[23px] shadow-[0_18px_55px_#5546360b] sm:px-[32px] sm:py-[29px]">
-          <div className="mb-[19px] flex items-start justify-between sm:mb-[23px]">
-            <div><p className="mb-[7px] text-[8px] font-bold tracking-[.18em] text-[#887466]">RESERVÁ ONLINE</p><h2 className="font-serif text-[23px] tracking-[-.02em] sm:text-[25px]">{step === "done" ? "¡Te esperamos!" : step === "details" ? "Un último paso" : "Encontrá tu momento"}</h2></div>
-            <span className="text-[25px] text-[#b7837b]">✳</span>
+          <h1 className="mx-auto max-w-[900px] text-center text-[clamp(2.75rem,7vw,5.35rem)] leading-[1.02] font-semibold tracking-[-0.075em] text-[#243b65]">
+            <span className="block">Tu negocio merece</span>
+            <span className="block text-[#557bbf]">funcionar mejor.</span>
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-[720px] text-center text-[15px] leading-7 text-[#515b6d] sm:mt-6 sm:text-[17px] sm:leading-8">
+            Gestioná turnos, servicios, profesionales y clientes desde un solo lugar. Simplificá tu día a día y dedicá más tiempo a hacer crecer tu negocio.
+          </p>
+
+          <div className="mt-7 flex justify-center sm:mt-8">
+            <a
+              href="#plataforma"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#243b65] px-6 text-[13px] font-semibold text-white shadow-[0_10px_24px_#243b653a] transition hover:-translate-y-0.5 hover:bg-[#304d7d] motion-reduce:transform-none motion-reduce:transition-none"
+            >
+              Conocé nuestra plataforma
+              <span aria-hidden="true" className="text-base">→</span>
+            </a>
           </div>
-
-          {step === "selection" && <>
-            <div className="mb-3 flex items-center gap-2.5 text-[10px] font-semibold text-[#69635b]"><span className="font-serif text-[13px] text-[#855a6b]">01</span><span className="h-px w-[19px] bg-[#dfd5cd]" />Elegí un servicio</div>
-            <div className="grid gap-[7px]" id="servicios">
-              {services.map((service) => {
-                const selected = service.id === selectedServiceId;
-                return <button className={`flex min-h-[59px] w-full items-center gap-[11px] rounded-[3px] border px-3 py-[9px] text-left transition hover:border-[#c9b4b6] ${selected ? "border-[#a27e88] bg-[#fcf9f8] shadow-[inset_2px_0_0_#714c5c]" : "border-[#ede9e3] bg-white"}`} type="button" key={service.id} aria-pressed={selected} onClick={() => setSelectedServiceId(service.id)}>
-                  <span className="grid size-[33px] shrink-0 place-items-center rounded-full bg-[#f4efeb] font-serif text-[19px] text-[#986b70]">{service.symbol}</span>
-                  <span className="grid flex-1 gap-[5px]"><strong className="text-[9px] font-semibold sm:text-[10px]">{service.name}</strong><span className="flex items-center gap-[7px] text-[9px] text-[#898278]">{service.duration}<i className="size-[2px] rounded-full bg-[#b7aca1]" />{service.price}</span></span>
-                  <span className={`grid size-[15px] place-items-center rounded-full border ${selected ? "border-[#714c5c]" : "border-[#d9d2ca]"}`}>{selected && <span className="size-[7px] rounded-full bg-[#714c5c]" />}</span>
-                </button>;
-              })}
-            </div>
-
-            <div className="my-[18px] h-px bg-[#eeeae4] sm:my-5" />
-            <div className="mb-3 flex items-center gap-2.5 text-[10px] font-semibold text-[#69635b]"><span className="font-serif text-[13px] text-[#855a6b]">02</span><span className="h-px w-[19px] bg-[#dfd5cd]" />Elegí día y horario</div>
-            <div className="mb-[11px] grid grid-cols-5 gap-[5px] sm:gap-[7px]" aria-label="Días disponibles">
-              {dates.map((date, index) => <button className={`grid min-h-[57px] content-center justify-items-center gap-0.5 rounded-[3px] border transition hover:border-[#c9b4b6] ${selectedDate === index ? "border-[#714c5c] bg-[#f7f1f1] text-[#5d3b4b]" : "border-[#ede9e3] bg-white text-[#8a8278]"}`} type="button" key={`${date.month}-${date.date}`} aria-pressed={selectedDate === index} onClick={() => setSelectedDate(index)}><span className="text-[6px] tracking-[.08em] sm:text-[7px]">{date.day}</span><strong className="font-serif text-[15px] font-normal sm:text-[17px]">{date.date}</strong><span className="text-[6px] tracking-[.08em] sm:text-[7px]">{date.month}</span></button>)}
-            </div>
-            <div className="mb-[18px] grid grid-cols-3 gap-[7px] sm:grid-cols-6 sm:gap-[6px]" aria-label="Horarios disponibles">
-              {timeSlots.map((time) => <button className={`min-h-[34px] rounded-[3px] border px-[3px] text-[10px] transition hover:border-[#b3939b] sm:min-h-[31px] sm:text-[9px] ${selectedTime === time ? "border-[#714c5c] bg-[#714c5c] text-white" : "border-[#eeeae4] bg-white text-[#716a61]"}`} type="button" key={time} aria-pressed={selectedTime === time} onClick={() => setSelectedTime(time)}>{time}</button>)}
-            </div>
-            <button className="flex min-h-[43px] w-full items-center justify-center gap-3 rounded-[3px] bg-[#855a6b] text-[11px] font-semibold text-white transition hover:-translate-y-px hover:bg-[#5d3b4b]" type="button" onClick={() => setStep("details")}>Continuar <span className="text-base font-normal">→</span></button>
-            <p className="mt-[13px] mb-0 flex items-center justify-center gap-[7px] text-[8px] text-[#979086]"><span className="text-[13px] text-[#839078]">♧</span>Sin compromiso · Cancelá cuando necesites</p>
-          </>}
-
-          {step === "details" && <form className="flex flex-col" onSubmit={submitBooking}>
-            <div className="mb-3 flex items-center gap-2.5 text-[10px] font-semibold text-[#69635b]"><span className="font-serif text-[13px] text-[#855a6b]">03</span><span className="h-px w-[19px] bg-[#dfd5cd]" />Tus datos</div>
-            <div className="mb-[21px] flex items-center gap-[11px] border border-[#eee9e2] bg-[#fcfaf8] p-3"><span className="grid size-[34px] shrink-0 place-items-center rounded-full bg-[#f1e9e5] font-serif text-lg text-[#986b70]">{selectedService.symbol}</span><span className="grid flex-1 gap-[5px]"><strong className="text-[10px] font-semibold">{selectedService.name}</strong><small className="text-[9px] text-[#827b71]">{dates[selectedDate].day.toLowerCase()} {dates[selectedDate].date} de {dates[selectedDate].month.toLowerCase()} · {selectedTime} h</small></span><strong className="whitespace-nowrap text-[10px] font-semibold">{selectedService.price}</strong></div>
-            <label className="mb-[6px] text-[10px] font-semibold text-[#554f47]" htmlFor="client-name">Tu nombre</label>
-            <input id="client-name" className="mb-[15px] h-10 w-full rounded-[3px] border border-[#e8e2da] px-[11px] text-[11px] placeholder:text-[#aaa297]" autoComplete="name" required value={clientName} onChange={(event) => setClientName(event.target.value)} placeholder="¿Cómo te llamás?" />
-            <label className="mb-[6px] text-[10px] font-semibold text-[#554f47]" htmlFor="client-phone">Tu celular</label>
-            <input id="client-phone" className="mb-[15px] h-10 w-full rounded-[3px] border border-[#e8e2da] px-[11px] text-[11px] placeholder:text-[#aaa297]" type="tel" autoComplete="tel" required value={clientPhone} onChange={(event) => setClientPhone(event.target.value)} placeholder="Ej. 11 2345 6789" />
-            <p className="mb-[15px] border-l-2 border-[#9aab8c] bg-[#f4f5ee] px-[10px] py-[9px] text-[9px] leading-[1.5] text-[#626c58]">Esta es una demostración: los datos no se guardan ni se envían.</p>
-            <button className="flex min-h-[43px] w-full items-center justify-center gap-3 rounded-[3px] bg-[#855a6b] text-[11px] font-semibold text-white transition hover:bg-[#5d3b4b]" type="submit">Solicitar este turno <span className="text-base font-normal">→</span></button>
-            <button className="mt-3 self-center p-1 text-[10px] text-[#766e65] hover:text-[#714c5c]" type="button" onClick={() => setStep("selection")}>← Volver a elegir horario</button>
-          </form>}
-
-          {step === "done" && <div className="px-0.5 pt-2 text-center">
-            <span className="mx-auto mb-[17px] grid size-[50px] place-items-center rounded-full bg-[#edf1e8] text-2xl text-[#68765a]">✓</span>
-            <p className="mb-[7px] text-[8px] font-bold tracking-[.18em] text-[#887466]">SOLICITUD DE DEMOSTRACIÓN</p>
-            <h3 className="mb-[10px] font-serif text-[29px]">Gracias{clientName ? `, ${clientName.split(" ")[0]}` : ""}.</h3>
-            <p className="mx-auto mb-[18px] max-w-[310px] text-[11px] leading-[1.7] text-[#716a60]">Elegiste <strong className="font-semibold text-[#29251f]">{selectedService.name}</strong> para el {dates[selectedDate].date} de {dates[selectedDate].month.toLowerCase()} a las {selectedTime} h.</p>
-            <p className="mb-[15px] border-l-2 border-[#9aab8c] bg-[#f4f5ee] px-[10px] py-[9px] text-left text-[9px] leading-[1.5] text-[#626c58]">Todavía no se guardó ni se envió ningún turno. Más adelante conectaremos esta pantalla a una agenda real.</p>
-            <button className="mt-3 p-1 text-[10px] text-[#766e65] hover:text-[#714c5c]" type="button" onClick={() => setStep("selection")}>Hacer otra reserva de prueba</button>
-          </div>}
         </div>
 
-        <div className="pointer-events-none absolute -right-[420px] top-5 hidden size-[400px] rounded-full border border-[#eee8df] md:block" />
-        <div className="pointer-events-none absolute -right-[377px] top-[62px] hidden size-[315px] rounded-full border border-[#f0ebe4] md:block" />
+        <div id="plataforma" className="relative mx-auto w-full max-w-[850px] scroll-mt-8">
+          <p className="mb-3 flex items-center gap-2 text-[11px] font-semibold text-[#425779] sm:mb-4 sm:text-xs"><span aria-hidden="true" className="grid size-5 place-items-center rounded-md bg-[#e9edf8] text-[10px] text-[#243b65]">i</span>Vista ilustrativa del panel de gestión: agenda, profesionales y clientes</p>
+          <div aria-hidden="true" className="overflow-hidden rounded-[20px] border border-white/90 bg-white/95 p-3 shadow-[0_24px_60px_#243b651c] sm:rounded-[24px] sm:p-4">
+            <div className="flex min-h-[390px] overflow-hidden rounded-[14px] border border-[#e8ebf1] bg-[#fbfcfe] sm:min-h-[430px]">
+              <aside aria-hidden="true" className="hidden w-[116px] shrink-0 flex-col border-r border-[#e8ebf1] bg-white px-3 py-4 sm:flex">
+                <div className="mb-8 flex items-center gap-2 px-1">
+                  <span aria-hidden="true" className="grid size-6 grid-cols-2 gap-[3px] rounded-[8px] bg-[#243b65] p-[6px]"><i className="rounded-full bg-[#6689d4]" /><i className="rounded-full bg-white" /><i className="rounded-full bg-white" /><i className="rounded-full bg-[#9acfc7]" /></span>
+                  <span className="text-[11px] font-semibold tracking-[-0.04em]">nuvora</span>
+                </div>
+                <div className="grid gap-2 text-[9px] font-medium text-[#81869a]">
+                  <span className="flex items-center gap-2 rounded-lg bg-[#e9edf8] px-2 py-2 text-[#243b65]"><i className="size-1.5 rounded-full bg-[#6689d4]" />Resumen</span>
+                  <span className="flex items-center gap-2 px-2 py-2"><i className="size-1.5 rounded-full bg-[#c7cada]" />Turnos</span>
+                  <span className="flex items-center gap-2 px-2 py-2"><i className="size-1.5 rounded-full bg-[#c7cada]" />Servicios</span>
+                  <span className="flex items-center gap-2 px-2 py-2"><i className="size-1.5 rounded-full bg-[#c7cada]" />Profesionales</span>
+                  <span className="flex items-center gap-2 px-2 py-2"><i className="size-1.5 rounded-full bg-[#c7cada]" />Clientes</span>
+                </div>
+                <div className="mt-auto rounded-xl bg-[#f5f6fb] p-2.5">
+                  <div className="mb-2 size-5 rounded-full bg-[#e0e1ff]" />
+                  <div className="h-1.5 w-14 rounded-full bg-[#d7d9e5]" />
+                  <div className="mt-1.5 h-1 w-10 rounded-full bg-[#e7e8ef]" />
+                </div>
+              </aside>
+
+              <div className="min-w-0 flex-1 p-4 sm:p-6">
+                <div className="mb-5 flex items-start justify-between gap-3 sm:mb-7">
+                  <div>
+                    <p className="text-[9px] font-semibold tracking-[0.13em] text-[#626b7d] uppercase sm:text-[10px]">Mi negocio</p>
+                    <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.045em] text-[#242943] sm:text-[20px]">Hola, Carolina <span aria-hidden="true">✦</span></h2>
+                  </div>
+                  <div className="grid size-8 place-items-center rounded-full border border-[#ececf3] bg-white text-[11px] text-[#73788c] sm:size-9">CM</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                  <div className="rounded-xl border border-[#eeeef5] bg-white p-3 sm:rounded-2xl sm:p-4">
+                    <div className="mb-3 flex items-center justify-between"><span className="text-[9px] font-medium text-[#626b7d] sm:text-[10px]">Turnos de hoy</span><span className="grid size-6 place-items-center rounded-lg bg-[#e9edf8] text-[11px] text-[#243b65]">◷</span></div>
+                    <div className="flex items-end gap-2"><strong className="text-[24px] leading-none font-semibold tracking-[-0.06em] text-[#242943] sm:text-[29px]">08</strong><span className="mb-0.5 rounded-full bg-[#eaf7f2] px-1.5 py-0.5 text-[8px] font-semibold text-[#4f9b7e]">+2</span></div>
+                    <p className="mt-2 text-[8px] text-[#999dad] sm:text-[9px]">En tu agenda</p>
+                  </div>
+                  <div className="rounded-xl border border-[#eeeef5] bg-white p-3 sm:rounded-2xl sm:p-4">
+                    <div className="mb-3 flex items-center justify-between"><span className="text-[9px] font-medium text-[#626b7d] sm:text-[10px]">Nuevos clientes</span><span className="grid size-6 place-items-center rounded-lg bg-[#edf5f3] text-[11px] text-[#397f73]">＋</span></div>
+                    <div className="flex items-end gap-2"><strong className="text-[24px] leading-none font-semibold tracking-[-0.06em] text-[#242943] sm:text-[29px]">12</strong><span className="mb-0.5 text-[8px] font-semibold text-[#4f9b7e]">este mes</span></div>
+                    <p className="mt-2 text-[8px] text-[#999dad] sm:text-[9px]">Personas que te eligen</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-xl border border-[#eeeef5] bg-white p-3 sm:mt-4 sm:rounded-2xl sm:p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div><h3 className="text-[10px] font-semibold text-[#343951] sm:text-[11px]">Próximos turnos</h3><p className="mt-1 text-[8px] text-[#999dad] sm:text-[9px]">Tu día, de un vistazo</p></div>
+                    <span className="rounded-md bg-[#f5f5fa] px-2 py-1 text-[8px] font-medium text-[#777c90]">Hoy, 18 jun</span>
+                  </div>
+                  <div className="grid gap-1">
+                    {appointments.map((appointment) => <AppointmentRow key={appointment.time} appointment={appointment} />)}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center gap-3 rounded-xl bg-[#e9edf8] px-3 py-2.5 sm:mt-4 sm:rounded-2xl sm:px-4 sm:py-3">
+                  <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-lg bg-white text-[12px] text-[#243b65]">✦</span>
+                  <p className="text-[9px] leading-4 text-[#425779] sm:text-[10px]">Todo organizado para que puedas enfocarte en lo que mejor hacés.</p>
+                  <span aria-hidden="true" className="ml-auto text-[12px] text-[#243b65]">↗</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-x-3 gap-y-[18px] border-t border-[#eee9e1] bg-[#f7f4ee] px-[19px] py-[22px] sm:flex sm:min-h-[111px] sm:items-center sm:justify-center sm:gap-[clamp(30px,7vw,100px)] sm:px-8 sm:py-5" id="ubicacion" aria-label="Información del espacio">
-        <div className="flex items-center gap-2 sm:gap-[11px]"><span className="grid size-[30px] shrink-0 place-items-center rounded-full border border-[#e4ddd2] font-serif text-sm text-[#8b7668] sm:size-[34px] sm:text-base">✳</span><span className="grid gap-1"><strong className="text-[8px] font-semibold sm:text-[9px]">Atención personalizada</strong><small className="text-[7px] text-[#8b8379] sm:text-[8px]">Cada visita, a tu ritmo</small></span></div>
-        <div className="flex items-center gap-2 sm:gap-[11px]"><span className="grid size-[30px] shrink-0 place-items-center rounded-full border border-[#e4ddd2] font-serif text-sm text-[#8b7668] sm:size-[34px] sm:text-base">⌖</span><span className="grid gap-1"><strong className="text-[8px] font-semibold sm:text-[9px]">Palermo, Buenos Aires</strong><small className="text-[7px] text-[#8b8379] sm:text-[8px]">Un espacio hecho para vos</small></span></div>
-        <div className="flex items-center gap-2 sm:gap-[11px]"><span className="grid size-[30px] shrink-0 place-items-center rounded-full border border-[#e4ddd2] font-serif text-sm text-[#8b7668] sm:size-[34px] sm:text-base">♡</span><span className="grid gap-1"><strong className="text-[8px] font-semibold sm:text-[9px]">Reservá en un minuto</strong><small className="text-[7px] text-[#8b8379] sm:text-[8px]">Elegí día y horario online</small></span></div>
-        <p className="col-span-2 m-0 text-center text-[7px] tracking-[.14em] text-[#aaa297] sm:hidden">DEMO DE PRODUCTO · DATOS DE EJEMPLO</p>
+      <section aria-labelledby="problemas-title" className="border-t border-[#e7eaf1] bg-white py-16 sm:py-24">
+        <div className="mx-auto w-[min(100%-2rem,1180px)] sm:w-[min(100%-3rem,1180px)]">
+          <div className="mx-auto max-w-[760px] text-center">
+            <p className="mb-4 text-[11px] font-semibold tracking-[0.16em] text-[#557bbf] sm:text-xs">EL DÍA A DÍA DE TU NEGOCIO</p>
+            <h2 id="problemas-title" className="text-[clamp(2rem,4vw,3.25rem)] leading-[1.08] font-semibold tracking-[-0.055em] text-[#243b65]">
+              ¿Tu negocio te demanda más tiempo del que debería?
+            </h2>
+            <p className="mx-auto mt-5 max-w-[650px] text-[15px] leading-7 text-[#53617a] sm:text-base sm:leading-8">
+              Cuando trabajás con turnos, hay muchas piezas que coordinar. Y si cada una vive en un lugar distinto, organizar el día puede volverse un trabajo en sí mismo.
+            </p>
+          </div>
+
+          <div className="mt-9 grid gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+            {problemCards.map((problem) => <ProblemCard key={problem.title} {...problem} />)}
+          </div>
+
+          <div className="mt-14 rounded-[24px] bg-[#243b65] px-6 py-10 text-center text-white sm:mt-20 sm:px-12 sm:py-14">
+            <p className="text-[clamp(1.9rem,4.5vw,3.5rem)] leading-tight font-semibold tracking-[-0.055em]">
+              Tu tiempo vale. <span className="text-[#b9cae9]">Tu negocio también.</span>
+            </p>
+            <p className="mx-auto mt-4 max-w-[680px] text-sm leading-7 text-[#e3e9f4] sm:text-base sm:leading-8">
+              Nuvora reúne en una sola plataforma la gestión de turnos, equipo, servicios y clientes para que puedas llevar tu negocio con más claridad y menos tareas dispersas.
+            </p>
+          </div>
+
+          <div className="mt-16 grid items-center gap-8 sm:mt-24 lg:grid-cols-[0.72fr_1.28fr] lg:gap-14">
+            <div className="max-w-[420px]">
+              <p className="mb-4 text-[11px] font-semibold tracking-[0.16em] text-[#557bbf] sm:text-xs">UNA PLATAFORMA, TODO CONECTADO</p>
+              <h2 className="text-[clamp(1.9rem,3.5vw,2.75rem)] leading-[1.1] font-semibold tracking-[-0.05em] text-[#243b65]">
+                Una forma más simple de llevar tu negocio.
+              </h2>
+              <p className="mt-4 text-[15px] leading-7 text-[#53617a]">
+                Encontrá lo que necesitás para organizar cada parte de tu trabajo, con la información a mano cuando la necesitás.
+              </p>
+            </div>
+
+            <div className="overflow-hidden rounded-[24px] border border-[#e3e7ef] bg-[#f7f8fc] shadow-[0_16px_44px_#243b650d]">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e3e7ef] bg-white px-5 py-4 sm:px-7">
+                <h3 className="text-sm font-semibold text-[#243b65]">Todo tu negocio, en un solo lugar</h3>
+                <p className="text-[10px] font-medium text-[#53617a]">Vista ilustrativa</p>
+              </div>
+              <div className="grid sm:grid-cols-2 sm:divide-x sm:divide-[#e3e7ef]">
+                {platformFeatures.map((feature) => <FeatureItem key={feature.title} {...feature} />)}
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   );
